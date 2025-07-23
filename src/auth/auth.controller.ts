@@ -1,8 +1,8 @@
 import { Body, Controller, Post } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { CreateUserDto, createUserDto } from "./dto/signup.dto";
-import { User } from "@/users/model/user.model";
 import { ZodPipe } from "@/common/pipes/zod/zod.pipe";
+import { ISignupResponse } from "./interfaces/signup.interface";
 
 @Controller("auth")
 export class AuthController {
@@ -16,7 +16,7 @@ export class AuthController {
 	signup(
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument
 		@Body(new ZodPipe(createUserDto)) dto: CreateUserDto,
-	): Promise<Partial<User>> {
+	): Promise<ISignupResponse> {
 		return this.authService.signup(dto);
 	}
 }

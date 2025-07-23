@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { User } from "./model/user.model";
+import { User, UserDocument } from "./model/user.model";
 import { Model } from "mongoose";
 
 @Injectable()
@@ -21,9 +21,9 @@ export class UsersService {
 		return this.userRepository.findOne({ email }).lean().exec();
 	}
 
-	async create(user: Partial<User>): Promise<User> {
+	async create(user: Partial<User>): Promise<UserDocument> {
 		const newUser = new this.userRepository(user);
-		await newUser.save();
-		return newUser.toJSON();
+		const savedUser = await newUser.save();
+		return savedUser.toJSON<UserDocument>();
 	}
 }
