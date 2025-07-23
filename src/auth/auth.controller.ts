@@ -14,7 +14,6 @@ export class AuthController {
 
 	@Post("signup")
 	signup(
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument
 		@Body(new ZodPipe(createUserDto)) dto: CreateUserDto,
 	): Promise<ISignupResponse> {
 		return this.authService.signup(dto);

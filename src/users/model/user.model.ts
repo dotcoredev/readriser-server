@@ -41,7 +41,7 @@ UserSchema.pre("save", async function (next) {
 		return next();
 	}
 	try {
-		const saltRounds = 12;
+		const saltRounds = process.env.NODE_ENV === "dev" ? 2 : 8;
 		this.password = await bcrypt.hash(this.password, saltRounds);
 		next();
 	} catch (error) {

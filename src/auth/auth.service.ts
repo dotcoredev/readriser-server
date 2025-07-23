@@ -13,15 +13,13 @@ export class AuthService {
 	) {}
 
 	async signup(dto: CreateUserDto): Promise<ISignupResponse> {
-		const { repeat_password, ...userData } = dto;
-
-		const findedUser = await this.usersService.getByEmail(userData.email);
+		const findedUser = await this.usersService.getByEmail(dto.email);
 
 		if (findedUser)
 			throw new ConflictException(
 				"Пользователь с таким email уже существует",
 			);
-		const createdUser = await this.usersService.create(userData);
+		const createdUser = await this.usersService.create(dto);
 		const { password, ...user } = createdUser;
 
 		return {
