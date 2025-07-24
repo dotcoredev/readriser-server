@@ -10,20 +10,20 @@ import type { Response } from "express";
 export class AuthController {
 	constructor(private readonly authService: AuthService) {}
 
-	@Post("signin")
-	signin(
-		@Body(new ZodPipe(signinUserDto)) dto: SigninUserDto,
-		@Res({ passthrough: true }) res: Response,
-	): Promise<ISignupResponse> {
-		return this.authService.login(dto, res);
-	}
-
 	@Post("signup")
 	signup(
 		@Body(new ZodPipe(createUserDto)) dto: CreateUserDto,
 		@Res({ passthrough: true }) res: Response,
 	): Promise<ISignupResponse> {
 		return this.authService.signup(dto, res);
+	}
+
+	@Post("signin")
+	signin(
+		@Body(new ZodPipe(signinUserDto)) dto: SigninUserDto,
+		@Res({ passthrough: true }) res: Response,
+	): Promise<ISignupResponse> {
+		return this.authService.login(dto, res);
 	}
 
 	@Post("logout")

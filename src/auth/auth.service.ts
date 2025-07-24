@@ -36,7 +36,18 @@ export class AuthService {
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { password, ...user } = createdUser.toJSON();
 		const { access_token, refresh_token } = this.generateTokens(user);
-		this.setCookies(res, refresh_token || "");
+		this.setCookies(res, refresh_token);
+		return {
+			access_token,
+		};
+	}
+
+	async login(dto: SigninUserDto, res: Response): Promise<ISignupResponse> {
+		const signinUser = await this.signin(dto);
+
+		const { access_token, refresh_token } = this.generateTokens(signinUser);
+		this.setCookies(res, refresh_token);
+
 		return {
 			access_token,
 		};
@@ -44,33 +55,6 @@ export class AuthService {
 
 	logout(res: Response): boolean {
 		this.setCookies(res, "");
-		return true;
-	}
-
-	async login(dto: SigninUserDto, res: Response): Promise<ISignupResponse> {
-		const signinUser = await this.signin(dto);
-
-		const { access_token, refresh_token } = this.generateTokens(signinUser);
-		this.setCookies(res, refresh_token || "");
-
-		return {
-			access_token,
-		};
-	}
-
-	setCookies(res: Response, value: string): boolean {
-		const expiresEnv =
-			this.configService.get<string>("JWT_REFRESH_EXPIRATION") || "30d";
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
-		const expiresMs = ms(expiresEnv as ms.StringValue) as number;
-		const expires = new Date(Date.now() + expiresMs);
-
-		res.cookie("refresh_token", value, {
-			httpOnly: true,
-			sameSite: "strict",
-			expires: expires,
-			secure: process.env.NODE_ENV === "production", // Use secure cookies in production
-		});
 		return true;
 	}
 
@@ -95,6 +79,22 @@ export class AuthService {
 		return user;
 	}
 
+	setCookies(res: Response, value: string): boolean {
+		const expiresEnv =
+			this.configService.get<string>("JWT_REFRESH_EXPIRATION") || "30d";
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+		const expiresMs = ms(expiresEnv as ms.StringValue) as number;
+		const expires = new Date(Date.now() + expiresMs);
+
+		res.cookie("refresh_token", value, {
+			httpOnly: true,
+			sameSite: "strict",
+			expires: expires,
+			secure: process.env.NODE_ENV === "production", // Use secure cookies in production
+		});
+		return true;
+	}
+
 	generateTokens(user: Partial<UserDocument>): ITokens {
 		const access_token = this.jwtService.sign(
 			{
@@ -104,7 +104,7 @@ export class AuthService {
 			{
 				algorithm: "HS256",
 				expiresIn:
-					this.configService.get<string>("JWT_EXPIRATION") || "1h", // Default to 1 hour if not set
+					this.configService.get<string>("JWT_EXPIRATION") || "1h",
 			},
 		);
 		const refresh_token = this.jwtService.sign(
@@ -116,7 +116,7 @@ export class AuthService {
 				algorithm: "HS256",
 				expiresIn:
 					this.configService.get<string>("JWT_REFRESH_EXPIRATION") ||
-					"30d", // Default to 30 days if not set
+					"30d",
 			},
 		);
 
