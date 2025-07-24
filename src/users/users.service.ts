@@ -1,9 +1,14 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import {
+	BadRequestException,
+	Injectable,
+	NotFoundException,
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { User, UserDocument } from "./model/user.model";
 import { Model } from "mongoose";
 import { CreateUserDto } from "@/auth/dto/signup.dto";
-import { AccessEnum, Role, RoleDocument, RoleEnum } from "./model/role.model";
+import { Role } from "./model/role.model";
+import { AccessEnum, RoleEnum } from "./interfaces/role-model.interface";
 
 @Injectable()
 export class UsersService {
@@ -12,10 +17,28 @@ export class UsersService {
 		@InjectModel(Role.name) private readonly roleRepository: Model<Role>,
 	) {}
 
+	// Получить всех пользователей
 	async getAll() {
 		return this.userRepository.find().lean().exec();
 	}
 
+	// Получить профиль пользователя по email
+	// Используется для получения информации о пользователе
+	async profile(email: string): Promise<UserDocument> {
+		// Проверка на существование пользователя по email
+		// Если пользователь не найден, выбрасываем исключение
+		const findUser = await this.getByEmail(email);
+		if (!findUser) throw new BadRequestException("Пользователь не найден");
+
+		// Исключение пароля из ответа
+		// Возвращаем пользователя без пароля
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { password, ...user } = findUser;
+		return user as UserDocument;
+	}
+
+	// Получить пользователя по ID
+	// Используется для получения информации о пользователе
 	async getById(id: string): Promise<UserDocument> {
 		const user = await this.userRepository
 			.findById(id)
@@ -27,15 +50,9 @@ export class UsersService {
 		return user as UserDocument;
 	}
 
-	async profile(email: string): Promise<Omit<User, "password">> {
-		const findUser = await this.getByEmail(email);
-		if (!findUser) throw new BadRequestException("Пользователь не найден");
-
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const { password, ...user } = findUser;
-		return user;
-	}
-
+	// Получить пользователя по email
+	// Используется для аутентификации и регистрации
+	// Найденный пользователь возвращется с паролем, не забываем исключать его из ответа
 	async getByEmail(email: string): Promise<UserDocument> {
 		const user = await this.userRepository
 			.findOne({ email })
@@ -46,26 +63,34 @@ export class UsersService {
 		return user as UserDocument;
 	}
 
-	async create(user: CreateUserDto): Promise<UserDocument | null> {
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const { repeat_password, ...fields } = user;
+	// Создать нового пользователя
+	// Используется при регистрации
+	async create(
+		fields: Omit<CreateUserDto, "repeat_password">,
+	): Promise<UserDocument> {
+		// Проверка на существование роли по умолчанию
+		// Если роль не найдена, выбрасываем исключение
 		const getDefaultRole = await this.roleRepository
-			.findOne<RoleDocument>({ role: RoleEnum.USER })
+			.findOne({ role: RoleEnum.USER })
 			.lean()
 			.exec();
 
 		if (!getDefaultRole) {
-			throw new Error("Default user role not found");
+			throw new NotFoundException("Роль по умолчанию не найдена");
 		}
 
-		const newUser = new this.userRepository({
-			...fields,
-			role: getDefaultRole,
+		// Объединение полей с ролью по умолчанию
+		const userFields = Object.assign(fields, {
+			role: getDefaultRole._id,
 		});
+		// Создание нового пользователя
+		const newUser = new this.userRepository(userFields);
 		const savedUser = await newUser.save();
-		return savedUser;
+		return savedUser.toJSON<UserDocument>();
 	}
 
+	// Создать роли по умолчанию
+	// Используется при инициализации приложения
 	async createRoles(): Promise<boolean> {
 		await this.roleRepository.create({
 			role: RoleEnum.ADMIN,

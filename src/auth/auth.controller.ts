@@ -10,6 +10,8 @@ import type { Request, Response } from "express";
 export class AuthController {
 	constructor(private readonly authService: AuthService) {}
 
+	// Регистрация нового пользователя
+	// Используется для создания нового пользователя в системе
 	@Post("signup")
 	signup(
 		@Body(new ZodPipe(createUserDto)) dto: CreateUserDto,
@@ -18,6 +20,8 @@ export class AuthController {
 		return this.authService.signup(dto, res);
 	}
 
+	// Аутентификация пользователя
+	// Используется для входа пользователя в систему
 	@Post("signin")
 	signin(
 		@Body(new ZodPipe(signinUserDto)) dto: SigninUserDto,
@@ -26,6 +30,8 @@ export class AuthController {
 		return this.authService.login(dto, res);
 	}
 
+	// Обновление токена доступа
+	// Используется для обновления токена доступа пользователя
 	@Post("refresh")
 	refresh(
 		@Res({ passthrough: true }) res: Response,
@@ -34,6 +40,8 @@ export class AuthController {
 		return this.authService.refresh(res, req);
 	}
 
+	// Выход пользователя из системы
+	// Используется для завершения сессии пользователя
 	@Post("logout")
 	logout(@Res({ passthrough: true }) res: Response): boolean {
 		return this.authService.logout(res);
