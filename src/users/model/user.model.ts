@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument } from "mongoose";
+import mongoose, { HydratedDocument } from "mongoose";
 import * as bcrypt from "bcrypt";
+import { Role } from "./role.model";
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -32,6 +33,22 @@ export class User {
 		required: true,
 	})
 	password: string;
+
+	@Prop({
+		default: false,
+	})
+	isBan: boolean;
+
+	@Prop({
+		default: false,
+	})
+	isConfirmed: boolean;
+
+	@Prop({
+		type: mongoose.Schema.Types.ObjectId,
+		ref: Role.name,
+	})
+	role: Role;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
