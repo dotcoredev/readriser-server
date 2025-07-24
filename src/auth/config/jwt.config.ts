@@ -10,6 +10,7 @@ export default registerAs(
 		},
 		verifyOptions: {
 			algorithms: ["HS256"],
+			ignoreExpiration: false, // Set to true if you want to ignore expiration
 		},
 	}),
 );

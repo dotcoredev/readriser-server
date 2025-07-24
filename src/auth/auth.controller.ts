@@ -1,10 +1,10 @@
-import { Body, Controller, Post, Res } from "@nestjs/common";
+import { Body, Controller, Post, Req, Res } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { CreateUserDto, createUserDto } from "./dto/signup.dto";
 import { ZodPipe } from "@/common/pipes/zod/zod.pipe";
 import { ISignupResponse } from "./interfaces/signup.interface";
 import { SigninUserDto, signinUserDto } from "./dto/signin.dto";
-import type { Response } from "express";
+import type { Request, Response } from "express";
 
 @Controller("auth")
 export class AuthController {
@@ -24,6 +24,14 @@ export class AuthController {
 		@Res({ passthrough: true }) res: Response,
 	): Promise<ISignupResponse> {
 		return this.authService.login(dto, res);
+	}
+
+	@Post("refresh")
+	refresh(
+		@Res({ passthrough: true }) res: Response,
+		@Req() req: Request,
+	): Promise<ISignupResponse> {
+		return this.authService.refresh(res, req);
 	}
 
 	@Post("logout")

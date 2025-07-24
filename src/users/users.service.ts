@@ -16,8 +16,15 @@ export class UsersService {
 		return this.userRepository.find().lean().exec();
 	}
 
-	async getById(id: string) {
-		return this.userRepository.findById(id).populate("role").lean().exec();
+	async getById(id: string): Promise<UserDocument> {
+		const user = await this.userRepository
+			.findById(id)
+			.select("-updatedAt")
+			.populate("role", "role access -_id")
+			.lean()
+			.exec();
+
+		return user as UserDocument;
 	}
 
 	async profile(email: string): Promise<Omit<User, "password">> {
@@ -29,14 +36,14 @@ export class UsersService {
 		return user;
 	}
 
-	async getByEmail(email: string): Promise<User | null> {
-		const findUser = await this.userRepository
+	async getByEmail(email: string): Promise<UserDocument> {
+		const user = await this.userRepository
 			.findOne({ email })
 			.select("-updatedAt")
 			.populate("role", "role access -_id")
-			.lean();
-
-		return findUser;
+			.lean()
+			.exec();
+		return user as UserDocument;
 	}
 
 	async create(user: CreateUserDto): Promise<UserDocument | null> {
