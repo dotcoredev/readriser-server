@@ -1,8 +1,8 @@
-import { Controller, Get, Req, UseGuards } from "@nestjs/common";
+import { Controller, Get } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { User } from "./model/user.model";
-import { AuthGuard } from "@nestjs/passport";
-import { Request } from "express";
+import { Authorization } from "@/auth/decorators/auth.decorator";
+import { Authorized } from "@/auth/decorators/authorized.decorator";
 
 @Controller("users")
 export class UsersController {
@@ -17,10 +17,10 @@ export class UsersController {
 
 	// Получение профиля пользователя
 	// Используется для получения информации о пользователе по email
-	@UseGuards(AuthGuard("jwt"))
+	@Authorization()
 	@Get("/profile")
-	getProfile(@Req() req: Request): User {
-		return req.user as User;
+	getProfile(@Authorized() user: User): User {
+		return user;
 	}
 
 	// Создание ролей для пользователей
