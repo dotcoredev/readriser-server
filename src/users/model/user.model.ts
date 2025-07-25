@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import mongoose, { HydratedDocument } from "mongoose";
+import { Types } from "mongoose";
 import * as bcrypt from "bcrypt";
 import { Role } from "./role.model";
 
@@ -53,16 +53,17 @@ export class User {
 	// Используется для определения прав доступа пользователя
 	// Связь с моделью Role
 	@Prop({
-		type: mongoose.Schema.Types.ObjectId,
+		type: Types.ObjectId,
 		ref: Role.name,
 	})
 	role: Role;
-}
 
-// Интерфейс для документа пользователя
-// Используется для типизации пользователя в Mongoose
-// Не забываем исключать пароль из ответа
-export type UserDocument = HydratedDocument<User>;
+	// ID пользователя в базе данных
+	// Используется для уникальной идентификации пользователя
+	_id: string;
+	updatedAt: Date;
+	createdAt: Date;
+}
 
 // Схема пользователя для Mongoose
 export const UserSchema = SchemaFactory.createForClass(User);

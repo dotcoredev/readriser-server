@@ -1,8 +1,8 @@
-import { Controller, Get, Query } from "@nestjs/common";
+import { Controller, Get, Req, UseGuards } from "@nestjs/common";
 import { UsersService } from "./users.service";
 import { User } from "./model/user.model";
-import { ZodPipe } from "@/common/pipes/zod/zod.pipe";
-import { ProfileDto, profileDto } from "./dto/profile.dto";
+import { AuthGuard } from "@nestjs/passport";
+import { Request } from "express";
 
 @Controller("users")
 export class UsersController {
@@ -11,17 +11,16 @@ export class UsersController {
 	// Получение всех пользователей
 	// Используется для получения списка всех пользователей в системе
 	@Get("/")
-	async getAllUsers() {
+	async getAllUsers(): Promise<User[]> {
 		return this.usersService.getAll();
 	}
 
 	// Получение профиля пользователя
 	// Используется для получения информации о пользователе по email
+	@UseGuards(AuthGuard("jwt"))
 	@Get("/profile")
-	async getProfile(
-		@Query(new ZodPipe(profileDto)) dto: ProfileDto,
-	): Promise<User> {
-		return this.usersService.profile(dto.email);
+	getProfile(@Req() req: Request): User {
+		return req.user as User;
 	}
 
 	// Создание ролей для пользователей

@@ -12,7 +12,7 @@ import { ISignupResponse, ITokens } from "./interfaces/signup.interface";
 import { SigninUserDto } from "./dto/signin.dto";
 import * as bcrypt from "bcrypt";
 import type { Request, Response } from "express";
-import { UserDocument } from "@/users/model/user.model";
+import { User } from "@/users/model/user.model";
 import { ConfigService } from "@nestjs/config";
 import * as ms from "ms";
 import { JwtPayload } from "./interfaces/jwt-payload.interface";
@@ -32,7 +32,7 @@ export class AuthService {
 		const { repeat_password, ...userDtoFields } = dto;
 
 		// Проверка на существование пользователя
-		const findedUser: UserDocument = await this.usersService.getByEmail(
+		const findedUser: User = await this.usersService.getByEmail(
 			userDtoFields.email,
 		);
 
@@ -48,7 +48,7 @@ export class AuthService {
 
 		const payload: JwtPayload = {
 			email: user.email,
-			_id: user._id.toString(),
+			_id: user._id,
 		};
 
 		// Генерация токенов и установка refresh_token в куки
@@ -65,7 +65,7 @@ export class AuthService {
 	async login(dto: SigninUserDto, res: Response): Promise<ISignupResponse> {
 		// Проверка на существование пользователя
 		// Если пользователь не найден, выбрасываем исключение внитри метода signin
-		const checkUser: UserDocument = await this.signin(dto);
+		const checkUser: User = await this.signin(dto);
 
 		// Создание JWT payload
 		// Используется для создания токенов
@@ -90,10 +90,13 @@ export class AuthService {
 			// Получение refresh токена из куки
 			// Если токен отсутствует, выбрасываем исключение
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-			const refreshToken: string = req.cookies["refresh_token"];
-			if (!refreshToken)
+			const getRefreshTokenFromCookies: string =
+				req.cookies["refresh_token"];
+			if (!getRefreshTokenFromCookies)
 				throw new UnauthorizedException("Отсутствует refresh токен");
 
+			const refreshToken: string =
+				getRefreshTokenFromCookies.split(" ")[1];
 			// Проверка и декодирование refresh токена
 			// Если токен недействителен, выбрасываем исключение
 			const parseToken: JwtPayload =
@@ -105,7 +108,7 @@ export class AuthService {
 
 			// Получение пользователя по ID из токена
 			// Если пользователь не найден, выбрасываем исключение
-			const user = await this.usersService.getById(parseToken._id);
+			const user: User = await this.usersService.getById(parseToken._id);
 			if (!user) {
 				throw new NotFoundException("Пользователь не найден");
 			}
@@ -114,7 +117,7 @@ export class AuthService {
 			// Используется для создания токенов
 			const payload: JwtPayload = {
 				email: user.email,
-				_id: user._id.toString(),
+				_id: user._id,
 			};
 			const { access_token } = this.generateTokens(payload, res);
 
@@ -140,12 +143,27 @@ export class AuthService {
 		return true;
 	}
 
+	// Валидация JWT payload
+	// Используется для проверки существования пользователя по email
+	async validate({ email }: JwtPayload): Promise<User> {
+		const findedUser: User = await this.usersService.getByEmail(email);
+
+		if (!findedUser)
+			throw new BadRequestException(
+				"Пользователь с таким email не найден",
+			);
+
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { password, ...user } = findedUser;
+
+		// Возвращаем пользователя без пароля
+		return user as User;
+	}
+
 	// Аутентификация пользователя по email и паролю
 	// Используется для входа пользователя в систему
-	async signin(dto: SigninUserDto): Promise<UserDocument> {
-		const findedUser: UserDocument = await this.usersService.getByEmail(
-			dto.email,
-		);
+	async signin(dto: SigninUserDto): Promise<User> {
+		const findedUser: User = await this.usersService.getByEmail(dto.email);
 
 		// Проверка на существование пользователя
 		// Если пользователь не найден, выбрасываем исключение
@@ -166,7 +184,7 @@ export class AuthService {
 		const { password, ...user } = findedUser;
 
 		// Возвращаем пользователя без пароля
-		return user as UserDocument;
+		return user as User;
 	}
 
 	// Установка refresh токена в куки
@@ -193,19 +211,21 @@ export class AuthService {
 	generateTokens(payload: JwtPayload, res: Response): ITokens {
 		// Генерация access токена
 		// Используется для доступа к защищенным ресурсам
-		const access_token = this.jwtService.sign(payload, {
+		const generateAccessToken = this.jwtService.sign(payload, {
 			algorithm: "HS256",
 			expiresIn: this.configService.get<string>("JWT_EXPIRATION") || "1h",
 		});
+		const access_token = `Bearer ${generateAccessToken}`;
 
 		// Генерация refresh токена
 		// Используется для обновления access токена
-		const refresh_token = this.jwtService.sign(payload, {
+		const generateRefreshToken = this.jwtService.sign(payload, {
 			algorithm: "HS256",
 			expiresIn:
 				this.configService.get<string>("JWT_REFRESH_EXPIRATION") ||
 				"30d",
 		});
+		const refresh_token = `Bearer ${generateRefreshToken}`;
 
 		// Установка refresh токена в куки
 		this.setCookies(res, refresh_token);

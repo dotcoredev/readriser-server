@@ -1,5 +1,4 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument } from "mongoose";
 import { AccessEnum, RoleEnum } from "../interfaces/role-model.interface";
 
 @Schema({
@@ -42,12 +41,11 @@ export class Role {
 
 	@Prop()
 	description: string;
-}
 
-// Интерфейс для документа роли
-// Используется для типизации роли в Mongoose
-// Не забываем исключать поля, которые не нужны в ответе
-export type RoleDocument = HydratedDocument<Role>;
+	// ID роли
+	// Используется для уникальной идентификации роли в системе
+	_id: string;
+}
 
 // Схема роли для Mongoose
 export const RoleSchema = SchemaFactory.createForClass(Role);

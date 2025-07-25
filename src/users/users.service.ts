@@ -4,7 +4,7 @@ import {
 	NotFoundException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { User, UserDocument } from "./model/user.model";
+import { User } from "./model/user.model";
 import { Model } from "mongoose";
 import { CreateUserDto } from "@/auth/dto/signup.dto";
 import { Role } from "./model/role.model";
@@ -18,13 +18,13 @@ export class UsersService {
 	) {}
 
 	// Получить всех пользователей
-	async getAll() {
+	async getAll(): Promise<User[]> {
 		return this.userRepository.find().lean().exec();
 	}
 
 	// Получить профиль пользователя по email
 	// Используется для получения информации о пользователе
-	async profile(email: string): Promise<UserDocument> {
+	async profile(email: string): Promise<User> {
 		// Проверка на существование пользователя по email
 		// Если пользователь не найден, выбрасываем исключение
 		const findUser = await this.getByEmail(email);
@@ -34,12 +34,13 @@ export class UsersService {
 		// Возвращаем пользователя без пароля
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { password, ...user } = findUser;
-		return user as UserDocument;
+
+		return user as User;
 	}
 
 	// Получить пользователя по ID
 	// Используется для получения информации о пользователе
-	async getById(id: string): Promise<UserDocument> {
+	async getById(id: string): Promise<User> {
 		const user = await this.userRepository
 			.findById(id)
 			.select("-updatedAt")
@@ -47,27 +48,28 @@ export class UsersService {
 			.lean()
 			.exec();
 
-		return user as UserDocument;
+		return user as User;
 	}
 
 	// Получить пользователя по email
 	// Используется для аутентификации и регистрации
 	// Найденный пользователь возвращется с паролем, не забываем исключать его из ответа
-	async getByEmail(email: string): Promise<UserDocument> {
+	async getByEmail(email: string): Promise<User> {
 		const user = await this.userRepository
 			.findOne({ email })
 			.select("-updatedAt")
 			.populate("role", "role access -_id")
 			.lean()
 			.exec();
-		return user as UserDocument;
+
+		return user as User;
 	}
 
 	// Создать нового пользователя
 	// Используется при регистрации
 	async create(
 		fields: Omit<CreateUserDto, "repeat_password">,
-	): Promise<UserDocument> {
+	): Promise<User> {
 		// Проверка на существование роли по умолчанию
 		// Если роль не найдена, выбрасываем исключение
 		const getDefaultRole = await this.roleRepository
@@ -86,7 +88,7 @@ export class UsersService {
 		// Создание нового пользователя
 		const newUser = new this.userRepository(userFields);
 		const savedUser = await newUser.save();
-		return savedUser.toJSON<UserDocument>();
+		return savedUser.toJSON<User>();
 	}
 
 	// Создать роли по умолчанию
