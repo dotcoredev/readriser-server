@@ -12,6 +12,7 @@ export class AuthController {
 
 	// Регистрация нового пользователя
 	// Используется для создания нового пользователя в системе
+
 	@Post("signup")
 	signup(
 		@Body(new ZodPipe(createUserDto)) dto: CreateUserDto,

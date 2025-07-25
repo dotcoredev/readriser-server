@@ -9,6 +9,10 @@ import { JwtStrategy } from "./strategies/jwt.strategy";
 @Module({
 	controllers: [AuthController],
 	providers: [AuthService, JwtStrategy],
-	imports: [UsersModule, JwtModule.registerAsync(jwtConfig.asProvider())],
+	imports: [
+		UsersModule,
+		// конфигурация JWT
+		JwtModule.registerAsync(jwtConfig.asProvider()),
+	],
 })
 export class AuthModule {}
