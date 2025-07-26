@@ -59,9 +59,9 @@ export const userSchema = z
 			.default(false)
 			.describe("Подтвержден ли пользователь"),
 		role: z.union([roleSchema, z.string()]).describe("Роль пользователя"), // может быть ID роли или объект роли
-		password: z.string().describe("Пароль пользователя"), // опционально, если используется для аутентификации
-		createdAt: z.date().optional().describe("Дата создания пользователя"), // опционально, если используется для аутентификации
-		updatedAt: z.date().optional().describe("Дата обновления пользователя"), // опционально, если используется для аутентификации
+		password: z.string().describe("Пароль пользователя"), // при ответе не передаем пароль клиенту
+		createdAt: z.date().optional().describe("Дата создания пользователя"), // опционально
+		updatedAt: z.date().optional().describe("Дата обновления пользователя"), // опционально
 	})
 	.describe("Схема пользователя");
 

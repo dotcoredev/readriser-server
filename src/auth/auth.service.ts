@@ -18,7 +18,6 @@ import * as bcrypt from "bcrypt";
 import type { Request, Response } from "express";
 import { ConfigService } from "@nestjs/config";
 import * as ms from "ms";
-import { JwtPayload } from "./interfaces/jwt-payload.interface";
 import {
 	TUserResponseSchema,
 	TUserSchema,
@@ -109,7 +108,7 @@ export class AuthService {
 				getRefreshTokenFromCookies.split(" ")[1];
 			// Проверка и декодирование refresh токена
 			// Если токен недействителен, выбрасываем исключение
-			const parseToken: JwtPayload =
+			const parseToken: TJwtPayloadDto =
 				await this.jwtService.verifyAsync(refreshToken);
 
 			if (!parseToken) {
