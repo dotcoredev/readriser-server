@@ -1,9 +1,10 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { HydratedDocument } from "mongoose";
+import { Types } from "mongoose";
 import * as bcrypt from "bcrypt";
+import { Role } from "./role.model";
 
-export type UserDocument = HydratedDocument<User>;
-
+// Схема пользователя для Mongoose
+// Используется для создания и управления пользователями в базе данных
 @Schema({
 	timestamps: true,
 	collection: "users",
@@ -28,20 +29,54 @@ export class User {
 	})
 	email: string;
 
+	// Пароль пользователя
+	// Хранится в зашифрованном виде
 	@Prop({
 		required: true,
 	})
 	password: string;
+
+	// Флаг для блокировки пользователя
+	// Используется для временной блокировки пользователя
+	@Prop({
+		default: false,
+	})
+	isBan: boolean;
+
+	// Флаг для подтверждения email
+	@Prop({
+		default: false,
+	})
+	isConfirmed: boolean;
+
+	// Роль пользователя
+	// Используется для определения прав доступа пользователя
+	// Связь с моделью Role
+	@Prop({
+		type: Types.ObjectId,
+		ref: Role.name,
+	})
+	role: Role;
+
+	// ID пользователя в базе данных
+	// Используется для уникальной идентификации пользователя
+	_id: string;
+	updatedAt: Date;
+	createdAt: Date;
 }
 
+// Схема пользователя для Mongoose
 export const UserSchema = SchemaFactory.createForClass(User);
 
+// Хук для хеширования пароля перед сохранением пользователя
+// Используется для безопасности хранения паролей
+// Хешируем пароль только если он был изменен
 UserSchema.pre("save", async function (next) {
 	if (!this.isModified("password")) {
 		return next();
 	}
 	try {
-		const saltRounds = 12;
+		const saltRounds = process.env.NODE_ENV === "dev" ? 2 : 8;
 		this.password = await bcrypt.hash(this.password, saltRounds);
 		next();
 	} catch (error) {

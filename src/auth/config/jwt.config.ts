@@ -6,7 +6,11 @@ export default registerAs(
 	(): JwtModuleOptions => ({
 		secret: process.env.JWT_SECRET,
 		signOptions: {
-			expiresIn: process.env.JWT_EXPIRATION,
+			algorithm: "HS256",
+		},
+		verifyOptions: {
+			algorithms: ["HS256"],
+			ignoreExpiration: false, // Проверка срока действия токена
 		},
 	}),
 );
