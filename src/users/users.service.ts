@@ -6,9 +6,10 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import { User } from "./model/user.model";
 import { Model } from "mongoose";
-import { CreateUserDto } from "@/auth/dto/signup.dto";
 import { Role } from "./model/role.model";
 import { AccessEnum, RoleEnum } from "./interfaces/role-model.interface";
+import type { TUserResponseSchema, TUserSchema } from "./dto/user.dto";
+import type { TSignupUserDto } from "@/auth/dto/auth.dto";
 
 @Injectable()
 export class UsersService {
@@ -18,13 +19,17 @@ export class UsersService {
 	) {}
 
 	// Получить всех пользователей
-	async getAll(): Promise<User[]> {
-		return this.userRepository.find().lean().exec();
+	async getAll(): Promise<TUserResponseSchema[]> {
+		return this.userRepository
+			.find()
+			.select("-password -updatedAt")
+			.lean()
+			.exec();
 	}
 
 	// Получить профиль пользователя по email
 	// Используется для получения информации о пользователе
-	async profile(email: string): Promise<User> {
+	async profile(email: string): Promise<TUserResponseSchema> {
 		// Проверка на существование пользователя по email
 		// Если пользователь не найден, выбрасываем исключение
 		const findUser = await this.getByEmail(email);
@@ -35,12 +40,13 @@ export class UsersService {
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { password, ...user } = findUser;
 
-		return user as User;
+		return user;
 	}
 
 	// Получить пользователя по ID
 	// Используется для получения информации о пользователе
-	async getById(id: string): Promise<User> {
+	// Метод не используется напрямую для отправки данных клиенту
+	async getById(id: string): Promise<TUserSchema | null> {
 		const user = await this.userRepository
 			.findById(id)
 			.select("-updatedAt")
@@ -48,13 +54,14 @@ export class UsersService {
 			.lean()
 			.exec();
 
-		return user as User;
+		return user;
 	}
 
 	// Получить пользователя по email
 	// Используется для аутентификации и регистрации
 	// Найденный пользователь возвращется с паролем, не забываем исключать его из ответа
-	async getByEmail(email: string): Promise<User> {
+	// Метод не используется напрямую для отправки данных клиенту
+	async getByEmail(email: string): Promise<TUserSchema | null> {
 		const user = await this.userRepository
 			.findOne({ email })
 			.select("-updatedAt")
@@ -62,14 +69,14 @@ export class UsersService {
 			.lean()
 			.exec();
 
-		return user as User;
+		return user;
 	}
 
 	// Создать нового пользователя
 	// Используется при регистрации
 	async create(
-		fields: Omit<CreateUserDto, "repeat_password">,
-	): Promise<User> {
+		fields: Omit<TSignupUserDto, "repeat_password">,
+	): Promise<TUserSchema> {
 		// Проверка на существование роли по умолчанию
 		// Если роль не найдена, выбрасываем исключение
 		const getDefaultRole = await this.roleRepository
@@ -88,7 +95,7 @@ export class UsersService {
 		// Создание нового пользователя
 		const newUser = new this.userRepository(userFields);
 		const savedUser = await newUser.save();
-		return savedUser.toJSON<User>();
+		return savedUser.toJSON<TUserSchema>();
 	}
 
 	// Создать роли по умолчанию

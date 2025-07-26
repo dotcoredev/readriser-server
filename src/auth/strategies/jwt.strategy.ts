@@ -1,9 +1,10 @@
 import { PassportStrategy } from "@nestjs/passport";
 import { Strategy, ExtractJwt } from "passport-jwt";
 import { AuthService } from "../auth.service";
-import { type JwtPayload } from "../interfaces/jwt-payload.interface";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { type TJwtPayloadDto } from "../dto/auth.dto";
+import { type TUserResponseSchema } from "@/users/dto/user.dto";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -25,7 +26,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 	// Используется для проверки существования пользователя по email
 	// Возвращает пользователя, если он существует, или выбрасывает исключение
 	// Если пользователь не найден, выбрасывается исключение
-	validate(jwtPayload: JwtPayload) {
+	validate(jwtPayload: TJwtPayloadDto): Promise<TUserResponseSchema | null> {
 		return this.authService.validate(jwtPayload);
 	}
 }

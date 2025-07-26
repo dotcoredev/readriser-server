@@ -7,15 +7,19 @@ import {
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { UsersService } from "src/users/users.service";
-import { CreateUserDto } from "./dto/signup.dto";
-import { ISignupResponse, ITokens } from "./interfaces/signup.interface";
-import { SigninUserDto } from "./dto/signin.dto";
+import type {
+	TAuthResponseDto,
+	TTokensDto,
+	TJwtPayloadDto,
+	TSigninUserDto,
+	TSignupUserDto,
+} from "./dto/auth.dto";
 import * as bcrypt from "bcrypt";
 import type { Request, Response } from "express";
-import { User } from "@/users/model/user.model";
 import { ConfigService } from "@nestjs/config";
 import * as ms from "ms";
 import { JwtPayload } from "./interfaces/jwt-payload.interface";
+import { TUserResponseSchema, TUserSchema } from "@/users/dto/user.dto";
 
 @Injectable()
 export class AuthService {
@@ -27,14 +31,16 @@ export class AuthService {
 
 	// Регистрация нового пользователя
 	// Используется для создания нового пользователя в системе
-	async signup(dto: CreateUserDto, res: Response): Promise<ISignupResponse> {
+	async signup(
+		dto: TSignupUserDto,
+		res: Response,
+	): Promise<TAuthResponseDto> {
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { repeat_password, ...userDtoFields } = dto;
 
 		// Проверка на существование пользователя
-		const findedUser: User = await this.usersService.getByEmail(
-			userDtoFields.email,
-		);
+		const findedUser: TUserSchema | null =
+			await this.usersService.getByEmail(userDtoFields.email);
 
 		if (findedUser)
 			throw new ConflictException(
@@ -46,52 +52,52 @@ export class AuthService {
 		const { password, ...user } =
 			await this.usersService.create(userDtoFields);
 
-		const payload: JwtPayload = {
+		const payload: TJwtPayloadDto = {
 			email: user.email,
 			_id: user._id,
 		};
 
 		// Генерация токенов и установка refresh_token в куки
 		// Возвращаем access_token в ответе
-		const { access_token } = this.generateTokens(payload, res);
+		const { accessToken } = this.generateTokens(payload, res);
 
 		return {
-			access_token,
+			accessToken,
 		};
 	}
 
 	// Аутентификация пользователя
 	// Используется для входа пользователя в систему
-	async login(dto: SigninUserDto, res: Response): Promise<ISignupResponse> {
+	async login(dto: TSigninUserDto, res: Response): Promise<TAuthResponseDto> {
 		// Проверка на существование пользователя
 		// Если пользователь не найден, выбрасываем исключение внитри метода signin
-		const checkUser: User = await this.signin(dto);
+		const checkUser: TUserResponseSchema = await this.signin(dto);
 
 		// Создание JWT payload
 		// Используется для создания токенов
-		const payload: JwtPayload = {
+		const payload: TJwtPayloadDto = {
 			email: checkUser.email,
-			_id: checkUser._id.toString(),
+			_id: checkUser._id,
 		};
 
 		// Генерация токенов и установка refresh_token в куки
 		// Возвращаем access_token в ответе
-		const { access_token } = this.generateTokens(payload, res);
+		const { accessToken } = this.generateTokens(payload, res);
 
 		return {
-			access_token,
+			accessToken,
 		};
 	}
 
 	// Обновление токена доступа
 	// Используется для обновления токена доступа пользователя
-	async refresh(res: Response, req: Request): Promise<ISignupResponse> {
+	async refresh(res: Response, req: Request): Promise<TAuthResponseDto> {
 		try {
 			// Получение refresh токена из куки
 			// Если токен отсутствует, выбрасываем исключение
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			const getRefreshTokenFromCookies: string =
-				req.cookies["refresh_token"];
+				req.cookies["refreshToken"];
 			if (!getRefreshTokenFromCookies)
 				throw new UnauthorizedException("Отсутствует refresh токен");
 
@@ -108,21 +114,23 @@ export class AuthService {
 
 			// Получение пользователя по ID из токена
 			// Если пользователь не найден, выбрасываем исключение
-			const user: User = await this.usersService.getById(parseToken._id);
+			const user: TUserSchema | null = await this.usersService.getById(
+				parseToken._id,
+			);
 			if (!user) {
 				throw new NotFoundException("Пользователь не найден");
 			}
 
 			// Создание JWT payload
 			// Используется для создания токенов
-			const payload: JwtPayload = {
+			const payload: TJwtPayloadDto = {
 				email: user.email,
 				_id: user._id,
 			};
-			const { access_token } = this.generateTokens(payload, res);
+			const { accessToken } = this.generateTokens(payload, res);
 
 			return {
-				access_token,
+				accessToken,
 			};
 		} catch (error: unknown) {
 			// Обработка ошибок
@@ -145,8 +153,11 @@ export class AuthService {
 
 	// Валидация JWT payload
 	// Используется для проверки существования пользователя по email
-	async validate({ email }: JwtPayload): Promise<User> {
-		const findedUser: User = await this.usersService.getByEmail(email);
+	async validate({
+		email,
+	}: TJwtPayloadDto): Promise<TUserResponseSchema | null> {
+		const findedUser: TUserSchema | null =
+			await this.usersService.getByEmail(email);
 
 		if (!findedUser)
 			throw new BadRequestException(
@@ -157,13 +168,14 @@ export class AuthService {
 		const { password, ...user } = findedUser;
 
 		// Возвращаем пользователя без пароля
-		return user as User;
+		return user;
 	}
 
 	// Аутентификация пользователя по email и паролю
 	// Используется для входа пользователя в систему
-	async signin(dto: SigninUserDto): Promise<User> {
-		const findedUser: User = await this.usersService.getByEmail(dto.email);
+	async signin(dto: TSigninUserDto): Promise<TUserResponseSchema> {
+		const findedUser: TUserSchema | null =
+			await this.usersService.getByEmail(dto.email);
 
 		// Проверка на существование пользователя
 		// Если пользователь не найден, выбрасываем исключение
@@ -184,7 +196,7 @@ export class AuthService {
 		const { password, ...user } = findedUser;
 
 		// Возвращаем пользователя без пароля
-		return user as User;
+		return user;
 	}
 
 	// Установка refresh токена в куки
@@ -197,7 +209,7 @@ export class AuthService {
 		const expiresMs = ms(expiresEnv as ms.StringValue);
 		const expires = new Date(Date.now() + expiresMs);
 
-		res.cookie("refresh_token", value, {
+		res.cookie("refreshToken", value, {
 			httpOnly: true, // Запретить доступ к куки через JavaScript
 			sameSite: "lax", // Использовать lax для улучшения безопасности
 			expires: expires, // Установить время жизни куки
@@ -208,14 +220,14 @@ export class AuthService {
 
 	// Генерация токенов
 	// Используется для создания access и refresh токенов
-	generateTokens(payload: JwtPayload, res: Response): ITokens {
+	generateTokens(payload: TJwtPayloadDto, res: Response): TTokensDto {
 		// Генерация access токена
 		// Используется для доступа к защищенным ресурсам
 		const generateAccessToken = this.jwtService.sign(payload, {
 			algorithm: "HS256",
 			expiresIn: this.configService.get<string>("JWT_EXPIRATION") || "1h",
 		});
-		const access_token = `Bearer ${generateAccessToken}`;
+		const accessToken = `Bearer ${generateAccessToken}`;
 
 		// Генерация refresh токена
 		// Используется для обновления access токена
@@ -225,12 +237,12 @@ export class AuthService {
 				this.configService.get<string>("JWT_REFRESH_EXPIRATION") ||
 				"30d",
 		});
-		const refresh_token = `Bearer ${generateRefreshToken}`;
+		const refreshToken = `Bearer ${generateRefreshToken}`;
 
 		// Установка refresh токена в куки
-		this.setCookies(res, refresh_token);
+		this.setCookies(res, refreshToken);
 
-		return { access_token, refresh_token };
+		return { accessToken, refreshToken };
 	}
 
 	// Сравнение паролей
