@@ -1,14 +1,10 @@
-import {
-	BadRequestException,
-	Injectable,
-	NotFoundException,
-} from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { User } from "./model/user.model";
 import { Model } from "mongoose";
 import { Role } from "./model/role.model";
 import { AccessEnum, RoleEnum } from "./interfaces/role-model.interface";
-import type { TUserResponseSchema, TUserSchema } from "./dto/user.dto";
+import { type TUserResponseSchema, type TUserSchema } from "./dto/user.dto";
 import type { TSignupUserDto } from "@/auth/dto/auth.dto";
 
 @Injectable()
@@ -27,34 +23,15 @@ export class UsersService {
 			.exec();
 	}
 
-	// Получить профиль пользователя по email
-	// Используется для получения информации о пользователе
-	async profile(email: string): Promise<TUserResponseSchema> {
-		// Проверка на существование пользователя по email
-		// Если пользователь не найден, выбрасываем исключение
-		const findUser = await this.getByEmail(email);
-		if (!findUser) throw new BadRequestException("Пользователь не найден");
-
-		// Исключение пароля из ответа
-		// Возвращаем пользователя без пароля
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const { password, ...user } = findUser;
-
-		return user;
-	}
-
 	// Получить пользователя по ID
 	// Используется для получения информации о пользователе
 	// Метод не используется напрямую для отправки данных клиенту
 	async getById(id: string): Promise<TUserSchema | null> {
-		const user = await this.userRepository
+		return this.userRepository
 			.findById(id)
-			.select("-updatedAt")
-			.populate("role", "role access -_id")
+			.populate("role", "-_id")
 			.lean()
 			.exec();
-
-		return user;
 	}
 
 	// Получить пользователя по email
@@ -62,14 +39,11 @@ export class UsersService {
 	// Найденный пользователь возвращется с паролем, не забываем исключать его из ответа
 	// Метод не используется напрямую для отправки данных клиенту
 	async getByEmail(email: string): Promise<TUserSchema | null> {
-		const user = await this.userRepository
+		return this.userRepository
 			.findOne({ email })
-			.select("-updatedAt")
-			.populate("role", "role access -_id")
+			.populate("role", "-_id")
 			.lean()
 			.exec();
-
-		return user;
 	}
 
 	// Создать нового пользователя

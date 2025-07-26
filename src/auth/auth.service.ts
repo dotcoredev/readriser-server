@@ -19,7 +19,11 @@ import type { Request, Response } from "express";
 import { ConfigService } from "@nestjs/config";
 import * as ms from "ms";
 import { JwtPayload } from "./interfaces/jwt-payload.interface";
-import { TUserResponseSchema, TUserSchema } from "@/users/dto/user.dto";
+import {
+	TUserResponseSchema,
+	TUserSchema,
+	userResponseSchema,
+} from "@/users/dto/user.dto";
 
 @Injectable()
 export class AuthService {
@@ -164,11 +168,12 @@ export class AuthService {
 				"Пользователь с таким email не найден",
 			);
 
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const { password, ...user } = findedUser;
-
+		// Преобразование пользователя в DTO
 		// Возвращаем пользователя без пароля
-		return user;
+		// Используется для отправки данных клиенту
+		const userResponse: TUserResponseSchema = this.parseUserDto(findedUser);
+
+		return userResponse;
 	}
 
 	// Аутентификация пользователя по email и паролю
@@ -192,11 +197,23 @@ export class AuthService {
 		);
 		if (!isPasswordValid) throw new BadRequestException("Неверный пароль");
 
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const { password, ...user } = findedUser;
+		// Преобразование пользователя в DTO
+		// Возвращаем пользователя без пароля
+		// Используется для отправки данных клиенту
+		const userResponse: TUserResponseSchema = this.parseUserDto(findedUser);
 
 		// Возвращаем пользователя без пароля
-		return user;
+		return userResponse;
+	}
+
+	// Преобразование пользователя в DTO
+	// Используется для отправки данных клиенту
+	parseUserDto(user: TUserSchema): TUserResponseSchema {
+		const parseUser: TUserResponseSchema = userResponseSchema.parse({
+			...user,
+			_id: user._id.toString(),
+		});
+		return parseUser;
 	}
 
 	// Установка refresh токена в куки
