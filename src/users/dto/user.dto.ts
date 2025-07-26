@@ -23,40 +23,47 @@ export const AccessEnum = z
 // ============================================================================
 // CORE SCHEMAS
 // ============================================================================
-const roleSchema = z.object({
-	_id: z.string().optional().describe("ID роли"),
-	role: UserRole.describe("Роль пользователя"),
-	access: AccessEnum.describe("Уровень доступа"),
-	isActive: z.boolean().default(true).describe("Активна ли роль"),
-	description: z.string().optional().describe("Описание роли"),
-});
+const roleSchema = z
+	.object({
+		_id: z.string().optional().describe("ID роли"),
+		role: UserRole.describe("Роль пользователя"),
+		access: AccessEnum.describe("Уровень доступа"),
+		//isActive: z.boolean().optional().describe("Активна ли роль"), // опционально, если требуется вернуть на клиент, уберите комментарий
+		//description: z.string().optional().describe("Описание роли"), // опционально, если требуется вернуть на клиент, уберите комментарий
+	})
+	.describe("Схема роли пользователя");
 
-export const userSchema = z.object({
-	_id: z.string().describe("ID пользователя"),
-	email: z.email().min(5).max(100).describe("Email пользователя"),
-	firstname: z
-		.string()
-		.min(2)
-		.max(100)
-		.optional()
-		.describe("Имя пользователя"),
-	lastname: z
-		.string()
-		.min(2)
-		.max(100)
-		.optional()
-		.describe("Фамилия пользователя"),
-	login: z.string().min(3).max(50).describe("Логин пользователя"),
-	isBan: z.boolean().default(false).describe("Заблокирован ли пользователь"),
-	isConfirmed: z
-		.boolean()
-		.default(false)
-		.describe("Подтвержден ли пользователь"),
-	role: z.union([roleSchema, z.string()]).describe("Роль пользователя"), // может быть ID роли или объект роли
-	password: z.string().describe("Пароль пользователя"), // опционально, если используется для аутентификации
-	createdAt: z.date().optional().describe("Дата создания пользователя"), // опционально, если используется для аутентификации
-	updatedAt: z.date().optional().describe("Дата обновления пользователя"), // опционально, если используется для аутентификации
-});
+export const userSchema = z
+	.object({
+		_id: z.string().describe("ID пользователя"),
+		email: z.email().min(5).max(100).describe("Email пользователя"),
+		firstname: z
+			.string()
+			.min(2)
+			.max(100)
+			.optional()
+			.describe("Имя пользователя"),
+		lastname: z
+			.string()
+			.min(2)
+			.max(100)
+			.optional()
+			.describe("Фамилия пользователя"),
+		login: z.string().min(3).max(50).describe("Логин пользователя"),
+		isBan: z
+			.boolean()
+			.default(false)
+			.describe("Заблокирован ли пользователь"),
+		isConfirmed: z
+			.boolean()
+			.default(false)
+			.describe("Подтвержден ли пользователь"),
+		role: z.union([roleSchema, z.string()]).describe("Роль пользователя"), // может быть ID роли или объект роли
+		password: z.string().describe("Пароль пользователя"), // опционально, если используется для аутентификации
+		createdAt: z.date().optional().describe("Дата создания пользователя"), // опционально, если используется для аутентификации
+		updatedAt: z.date().optional().describe("Дата обновления пользователя"), // опционально, если используется для аутентификации
+	})
+	.describe("Схема пользователя");
 
 // ============================================================================
 // RESPONSE SCHEMAS

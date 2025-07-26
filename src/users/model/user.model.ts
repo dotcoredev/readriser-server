@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Types } from "mongoose";
 import * as bcrypt from "bcrypt";
 import { Role } from "./role.model";
+import { TUserSchema } from "../dto/user.dto";
 
 // Схема пользователя для Mongoose
 // Используется для создания и управления пользователями в базе данных
@@ -66,7 +67,7 @@ export class User {
 }
 
 // Схема пользователя для Mongoose
-export const UserSchema = SchemaFactory.createForClass(User);
+export const UserSchema = SchemaFactory.createForClass<TUserSchema>(User);
 
 // Хук для хеширования пароля перед сохранением пользователя
 // Используется для безопасности хранения паролей
