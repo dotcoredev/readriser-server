@@ -241,7 +241,6 @@ export class AuthService {
 		// Генерация access токена
 		// Используется для доступа к защищенным ресурсам
 		const generateAccessToken = this.jwtService.sign(payload, {
-			algorithm: "HS256",
 			expiresIn: this.configService.get<string>("JWT_EXPIRATION") || "1h",
 		});
 		const accessToken = `Bearer ${generateAccessToken}`;
@@ -249,7 +248,6 @@ export class AuthService {
 		// Генерация refresh токена
 		// Используется для обновления access токена
 		const generateRefreshToken = this.jwtService.sign(payload, {
-			algorithm: "HS256",
 			expiresIn:
 				this.configService.get<string>("JWT_REFRESH_EXPIRATION") ||
 				"30d",
